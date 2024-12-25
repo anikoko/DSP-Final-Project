@@ -5,14 +5,16 @@ import seaborn as sns
 from scipy.stats import ttest_ind, f_oneway
 
 # Load the data
-datafile = "Accident_Information.csv"
+datafile = "Final_test/Accident_Information.csv"
 df = pd.read_csv(datafile, low_memory=False)
+
+df = df.head(1000000)
 
 # Task 5: Remove rows where road class is unclassified
 df = df[df['1st_Road_Class'] != 'Unclassified']
 df = df[df['2nd_Road_Class'] != 'Unclassified']
 
-print(df.head())
+# print(df.head())
 
 # Task 1: Transform string-numbers into numerical columns
 columns_to_convert = [
@@ -39,11 +41,14 @@ df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 df['Time'] = pd.to_datetime(df['Time'], format='%H:%M', errors='coerce').dt.time
 
 # Task 3: Transform 'InScotland' to Boolean values
-df['InScotland'] = df['InScotland'].map({'Yes': True, 'No': False})
+df['InScotland'] = df['InScotland'].map({'Yes': 1, 'No': 0})
 #
 # Task 4: Display the first few rows and summarize the data
+print('HEAD')
 print(df.head())
+print('\nINFO')
 print(df.info())
+print("\nSUMMARY STATISTICS")
 print(df.describe(include='all'))
 
 # Task 6: Impute missing values in numerical variables
@@ -55,7 +60,7 @@ for col in numerical_columns:
             df[col] = df[col].fillna(df[col].mean())
         else:
             df[col] = df[col].fillna(df[col].median())
-print(df)
+# print(df)
 
 print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 print(list(df.columns))
@@ -79,7 +84,7 @@ for col in categorical_columns:
         df = pd.concat([df, dummies], axis=1)  # Add dummies without removing the original column
     else:  # Use label encoding for high cardinality
         df[f"{col}_encoded"] = df[col].astype('category').cat.codes  # Create a new column for encoded values
-print(df)
+# print(df)
 print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 print(list(df.columns))
 
@@ -101,7 +106,7 @@ def get_time_of_day(time):
 # Apply the function
 df['Time_of_Day'] = df['Time_encoded'].apply(get_time_of_day)
 
-print(df)
+# print(df)
 print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
 print(list(df.columns))
@@ -111,6 +116,7 @@ accident_density = df['Local_Authority_(District)'].value_counts().reset_index()
 accident_density.columns = ['Local_Authority_(District)', 'Accident_Count']
 
 # Output accident density
+print('Accident Density')
 print(accident_density)
 
 
@@ -120,6 +126,9 @@ categorical_summary = df.describe(include=['object', 'category']).T
 
 print("Numerical Summary:\n", numerical_summary)
 print("Categorical Summary:\n", categorical_summary)
+print('HEAD\n')
+print(df.head())
+print('\nCOLUMNS')
 print(list(df.columns))
 
 # Task 2.2: Identify trends in accident severity, time, weather, and road conditions
@@ -157,6 +166,33 @@ plt.scatter(df['Longitude'], df['Latitude'], alpha=0.5, c='red', s=1)
 plt.title("Accident Locations")
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
+plt.show()
+
+# Task 2.5 on a map
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+
+# Create a map using Cartopy
+fig, ax = plt.subplots(figsize=(10, 7), subplot_kw={'projection': ccrs.PlateCarree()})
+
+# Set the extent of the map (adjust based on your data)
+ax.set_extent([-10, 2, 49, 61])  # [lon_min, lon_max, lat_min, lat_max]
+
+# Add map features (coastlines, borders, etc.)
+ax.add_feature(cfeature.COASTLINE)
+ax.add_feature(cfeature.BORDERS, linestyle=':')
+ax.add_feature(cfeature.LAND, edgecolor='black')
+ax.add_feature(cfeature.LAKES, edgecolor='black')
+ax.add_feature(cfeature.RIVERS)
+
+# Plot longitude and latitude from the DataFrame
+ax.scatter(df['Longitude'], df['Latitude'], color='red', s=0.1, label='Locations', transform=ccrs.PlateCarree())
+
+# Add a title and legend
+ax.set_title('Locations on Map', fontsize=16)
+ax.legend()
+
+# Show the plot
 plt.show()
 
 # Task 2.6: Heatmap of the correlation matrix
@@ -198,3 +234,104 @@ for col, result in anova_results.items():
 print("\nT-Test Results (Exactly 2 groups):\n")
 for col, result in ttest_results.items():
     print(f"{col}: t-statistic = {result.statistic:.2f}, p-value = {result.pvalue:.4f}")
+
+
+# Decision Trees
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
+import graphviz
+from sklearn.inspection import permutation_importance
+from sklearn.preprocessing import StandardScaler
+
+df['Year'] = pd.to_datetime(df['Date']).dt.year
+df['Month'] = pd.to_datetime(df['Date']).dt.month
+df['Day'] = pd.to_datetime(df['Date']).dt.day
+df.drop(columns=['Date'], inplace=True)
+df['Hour'] = pd.to_datetime(df['Time'], format='%H:%M').dt.hour
+df.drop(columns=['Time'], inplace=True)
+
+# Target and feature selection
+target = "Accident_Severity"
+features = [
+    '1st_Road_Class', '2nd_Road_Class', 'Carriageway_Hazards', 'Day_of_Week',
+    'Junction_Control', 'Light_Conditions', 'Road_Surface_Conditions',
+    'Road_Type', 'Speed_limit', 'Weather_Conditions'
+]
+
+y = df[target]
+
+# Encode categorical variables if necessary (simplified encoding example)
+categorical_cols = df.select_dtypes(include=['object', 'category']).columns
+for col in categorical_cols:
+    print(f"{col}: {df[col].nunique()} unique values")
+
+# Handle high-cardinality columns
+high_card_cols = [col for col in categorical_cols if df[col].nunique() > 100]
+low_card_cols = [col for col in categorical_cols if col not in high_card_cols]
+
+# Encode high-cardinality columns with frequency encoding
+for col in high_card_cols:
+    freq_encoding = df[col].value_counts().to_dict()
+    df[col] = df[col].map(freq_encoding)
+
+# One-hot encode low-cardinality columns
+df = pd.get_dummies(df, columns=low_card_cols, drop_first=True)
+
+# Split dataset
+X = df.drop(columns=['Accident_Severity_Serious', 'Accident_Severity_Slight'])
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+
+# Train Decision Tree Classifier
+clf = DecisionTreeClassifier(max_depth=5, random_state=42)
+clf.fit(X_train, y_train)
+
+# Visualization of the Decision Tree
+def visualize_tree(model, feature_names):
+    dot_data = export_graphviz(
+        model, out_file=None, feature_names=feature_names, class_names=model.classes_.astype(str),
+        filled=True, rounded=True, special_characters=True
+    )
+    graph = graphviz.Source(dot_data)
+    graph.render("decision_tree")  # Saves as decision_tree.pdf
+    return graph
+
+# Generate the interactive decision tree visualization
+visualize_tree(clf, X.columns).view()
+
+# Feature Importance Analysis
+importance = clf.feature_importances_
+feature_importance_df = pd.DataFrame({"Feature": X.columns, "Importance": importance})
+feature_importance_df = feature_importance_df.sort_values(by="Importance", ascending=False)
+
+# Plot feature importance
+plt.figure(figsize=(10, 6))
+plt.barh(feature_importance_df["Feature"], feature_importance_df["Importance"], color="skyblue")
+plt.xlabel("Importance")
+plt.ylabel("Features")
+plt.title("Feature Importance in Decision Tree")
+plt.gca().invert_yaxis()
+plt.tight_layout()
+plt.show()
+
+# Feature selection based on threshold
+threshold = 0.1
+selected_features = feature_importance_df[feature_importance_df["Importance"] > threshold]["Feature"].tolist()
+selected_indices = [X.columns.get_loc(feature) for feature in selected_features]
+
+# Train new model with selected features
+X_train_selected = X_train[:, selected_indices]
+X_test_selected = X_test[:, selected_indices]
+clf_selected = DecisionTreeClassifier(max_depth=5, random_state=42)
+clf_selected.fit(X_train_selected, y_train)
+
+# Evaluate models
+print("Original Model Performance:\n", classification_report(y_test, clf.predict(X_test)))
+print("Reduced Model Performance:\n", classification_report(y_test, clf_selected.predict(X_test_selected)))
