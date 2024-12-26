@@ -475,3 +475,109 @@ plt.title("Segments (K-Means Clustering)")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# Linear Regression
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, r2_score
+
+# Objective: Create a simple model to predict daily_sales.
+# Instructions:
+
+# Use marketing_spend and website_visitors to predict daily_sales using Linear Regression.
+X = df_copy[['Speed_limit',
+             'Weather_Conditions_Fine no high winds', 'Weather_Conditions_Fine + high winds', 'Weather_Conditions_Fog or mist', 'Weather_Conditions_Other',
+               'Weather_Conditions_Raining + high winds', 'Weather_Conditions_Raining no high winds', 'Weather_Conditions_Snowing + high winds', 
+               'Weather_Conditions_Snowing no high winds']]
+y = df_copy['Accident_Severity']
+
+
+# Split data into training (80%) and test (20%) sets.
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+
+from sklearn.model_selection import cross_val_score, KFold
+from sklearn.metrics import make_scorer, mean_absolute_error
+
+# 5-fold cross-validation
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+# Function to compute R-squared and MAE for each model using cross-validation
+def evaluate_model(model, X, y, cv):
+    # R-squared
+    r2_scores = cross_val_score(model, X, y, cv=cv, scoring='r2')
+    # MAE
+    mae_scorer = make_scorer(mean_absolute_error, greater_is_better=False)
+    mae_scores = cross_val_score(model, X, y, cv=cv, scoring=mae_scorer)
+    
+    return np.mean(r2_scores), np.mean(mae_scores)
+
+r2_mean, mae_mean = evaluate_model(model, X, y, kf)
+results = {'R-squared': r2_mean, 'Mean Absolute Error': -mae_mean}
+
+print(results)
+
+# Scatter plot for Actual vs Predicted
+plt.figure(figsize=(12, 6))
+plt.scatter(y_test, y_pred, alpha=0.7, color='b')
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='r', linestyle='--', label='Perfect Prediction')
+# plt.plot(X_test, y_pred)
+# plt.scatter(y_test, X_test)
+
+plt.title('Actual vs Predicted Values')
+plt.xlabel('Actual Number of Casualties')
+plt.ylabel('Predicted Number of Casualties')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+# RandomForestRegressor
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# Assuming your DataFrame is named 'df_copy'
+
+# Extract features and target variable
+X = df_copy[['Speed_limit', 
+             'Weather_Conditions_Fine no high winds', 'Weather_Conditions_Fine + high winds', 
+             'Weather_Conditions_Fog or mist', 'Weather_Conditions_Other', 
+             'Weather_Conditions_Raining + high winds', 'Weather_Conditions_Raining no high winds', 
+             'Weather_Conditions_Snowing + high winds', 'Weather_Conditions_Snowing no high winds']]
+y = df_copy['Accident_Severity']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create a Random Forest Regressor
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42) 
+
+# Fit the model to the training data
+rf_model.fit(X_train, y_train)
+
+# Make predictions on the test data
+y_pred = rf_model.predict(X_test)
+
+# Evaluate model performance
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error: {mse}") 
+
+# Feature importance
+feature_importance = pd.DataFrame({'Feature': X.columns, 
+                                  'Importance': rf_model.feature_importances_})
+feature_importance.sort_values(by='Importance', ascending=False, inplace=True)
+print("\nFeature Importance:")
+print(feature_importance)
+
+
+r2_mean, mae_mean = evaluate_model(rf_model, X, y, kf)
+results = {'R-squared': r2_mean, 'Mean Absolute Error': -mae_mean}
+
+print(results)
