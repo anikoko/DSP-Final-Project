@@ -335,3 +335,95 @@ clf_selected.fit(X_train_selected, y_train)
 # Evaluate models
 print("Original Model Performance:\n", classification_report(y_test, clf.predict(X_test)))
 print("Reduced Model Performance:\n", classification_report(y_test, clf_selected.predict(X_test_selected)))
+
+
+# Logistic Regression
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report
+
+# Get features and target
+X = df.drop('InScotland', axis=1)
+y = df['InScotland']
+
+y = y.fillna(0) 
+
+# Remove columns with NaN values
+cols_with_nan = X.columns[X.isnull().any()].tolist()
+X = X.drop(columns=cols_with_nan)
+
+# Sample if needed
+sample_size = 100000
+if len(X) > sample_size:
+    np.random.seed(42)
+    indices = np.random.choice(len(X), sample_size, replace=False)
+    X = X.iloc[indices]
+    y = y.iloc[indices]
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Scale features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Train model
+model = LogisticRegression(max_iter=1000, solver='saga', n_jobs=-1, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# Evaluate
+y_pred = model.predict(X_test_scaled)
+print("Model Performance:")
+print(classification_report(y_test, y_pred))
+
+# Feature importance
+feature_importance = pd.DataFrame({
+    'Feature': X.columns,
+    'Importance': abs(model.coef_[0])
+}).sort_values('Importance', ascending=False)
+
+print("\nTop 10 Most Important Features:")
+print(feature_importance.head(10))
+
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, roc_curve, auc, ConfusionMatrixDisplay
+
+
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+
+# Calculate and visualize confusion matrix.
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+disp.plot(cmap='Blues')
+plt.title('Confusion Matrix')
+plt.show()
+
+# Compute precision, recall, and F1 score.
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+print(f'Precision: {precision:.4f}')
+print(f'Recall: {recall:.4f}')
+print(f'F1 Score: {f1:.4f}')
+
+# Plot ROC curve and calculate AUC score
+y_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure()
+plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic (ROC) Curve')
+plt.legend(loc='lower right')
+plt.show()
+
+print(f'AUC Score: {roc_auc:.4f}')
