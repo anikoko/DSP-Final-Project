@@ -111,6 +111,8 @@ print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
 print(list(df.columns))
 
+df_copy = df.copy()
+
 # Task 10: Calculate accident density by local authority
 accident_density = df['Local_Authority_(District)'].value_counts().reset_index()
 accident_density.columns = ['Local_Authority_(District)', 'Accident_Count']
@@ -427,3 +429,49 @@ plt.legend(loc='lower right')
 plt.show()
 
 print(f'AUC Score: {roc_auc:.4f}')
+
+# K-means clustering
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+X = df_copy[['Longitude', 'Latitude']]
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Experiment with values of k from 2 to 5 and use the elbow method to determine the optimal number
+inertia = []
+k_values = range(2, 6)
+
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(X_scaled)
+    inertia.append(kmeans.inertia_)
+
+plt.figure(figsize=(8, 5))
+plt.plot(k_values, inertia, marker='o', linestyle='--', color='b')
+plt.xlabel("Number of Clusters (k)")
+plt.ylabel("Inertia (Sum of Squared Distances)")
+plt.title("Elbow Method for Optimal k")
+plt.grid(True)
+plt.show()
+
+optimal_k = 4
+kmeans_optimal = KMeans(n_clusters=optimal_k, random_state=42)
+df_copy['Cluster'] = kmeans_optimal.fit_predict(X_scaled)
+
+# Plot the clusters and describe each segment in terms of spending and income levels.
+plt.figure(figsize=(8, 5))
+for cluster in range(optimal_k):
+    cluster_data = df_copy[df_copy['Cluster'] == cluster]
+    plt.scatter(cluster_data['Longitude'], cluster_data['Latitude'], label=f"Cluster {cluster}")
+
+plt.scatter(kmeans_optimal.cluster_centers_[:, 0] * scaler.scale_[0] + scaler.mean_[0], 
+            kmeans_optimal.cluster_centers_[:, 1] * scaler.scale_[1] + scaler.mean_[1], 
+            c='red', marker='x', s=100, label="Centroids")
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+plt.title("Segments (K-Means Clustering)")
+plt.legend()
+plt.grid(True)
+plt.show()
