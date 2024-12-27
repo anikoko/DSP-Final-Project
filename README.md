@@ -3,13 +3,13 @@ The Final Project to analyse Britain's accident reports.
 
 two main files: one is a simple python file, the other is a jupiter notebook for easy demo purposes
 
-Note:
-1. the data was too large to be uploaded, see the teams task to get the file
-2. accident_analysis_final.py - is a first draft and can be ignored.
 
+Notes:
+1. the data was too large to be uploaded, pleas,see the teams task to get the file
+2. accident_analysis_final.py and pandas_tasks.py - are initial drafts and can be ignored.
 
 Contents and tasks:
-pandas_tasks.py
+preprocessing.py
 1.	Pandas
 1)	Make sure all string-numbers are transformed into numerical columns 
 2)	Transform date to pd.date and Time to the time value.

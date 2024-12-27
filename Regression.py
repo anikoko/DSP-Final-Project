@@ -37,6 +37,9 @@ class Regression:
         r2_mean, mae_mean = Regression.evaluate_model(model, X, y)
         results = {'R-squared': r2_mean, 'Mean Absolute Error': -mae_mean}
 
+        mse = mean_squared_error(y_test, y_pred)
+        print(f"Mean Squared Error: {mse}") 
+
         print('LinearRegression results')
         print(results)
 
@@ -202,77 +205,3 @@ class Regression:
 
         print("\nTop 10 Most Important Features:")
         print(feature_importance.head(10))
-
-
-
-
-
-    # # Use marketing_spend and website_visitors to predict daily_sales using Linear Regression.
-    # X = df_copy[['Speed_limit',
-    #             'Weather_Conditions_Fine no high winds', 'Weather_Conditions_Fine + high winds', 'Weather_Conditions_Fog or mist', 'Weather_Conditions_Other',
-    #             'Weather_Conditions_Raining + high winds', 'Weather_Conditions_Raining no high winds', 'Weather_Conditions_Snowing + high winds', 
-    #             'Weather_Conditions_Snowing no high winds']]
-    # y = df_copy['Accident_Severity']
-
-
-   
-
-
-    
-
-    # # 5-fold cross-validation
-    
-
-    # # Function to compute R-squared and MAE for each model using cross-validation
-    
-
-    # r2_mean, mae_mean = evaluate_model(model, X, y, kf)
-    # results = {'R-squared': r2_mean, 'Mean Absolute Error': -mae_mean}
-
-    # print(results)
-
-   
-
-
-    # # RandomForestRegressor
-
-
-
-    # # Assuming your DataFrame is named 'df_copy'
-
-    # # Extract features and target variable
-    # X = df_copy[['Speed_limit', 
-    #             'Weather_Conditions_Fine no high winds', 'Weather_Conditions_Fine + high winds', 
-    #             'Weather_Conditions_Fog or mist', 'Weather_Conditions_Other', 
-    #             'Weather_Conditions_Raining + high winds', 'Weather_Conditions_Raining no high winds', 
-    #             'Weather_Conditions_Snowing + high winds', 'Weather_Conditions_Snowing no high winds']]
-    # y = df_copy['Accident_Severity']
-
-    # # Split data into training and testing sets
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # # Create a Random Forest Regressor
-    # rf_model = RandomForestRegressor(n_estimators=100, random_state=42) 
-
-    # # Fit the model to the training data
-    # rf_model.fit(X_train, y_train)
-
-    # # Make predictions on the test data
-    # y_pred = rf_model.predict(X_test)
-
-    # # Evaluate model performance
-    # mse = mean_squared_error(y_test, y_pred)
-    # print(f"Mean Squared Error: {mse}") 
-
-    # # Feature importance
-    # feature_importance = pd.DataFrame({'Feature': X.columns, 
-    #                                 'Importance': rf_model.feature_importances_})
-    # feature_importance.sort_values(by='Importance', ascending=False, inplace=True)
-    # print("\nFeature Importance:")
-    # print(feature_importance)
-
-
-    # r2_mean, mae_mean = evaluate_model(rf_model, X, y, kf)
-    # results = {'R-squared': r2_mean, 'Mean Absolute Error': -mae_mean}
-
-    # print(results)

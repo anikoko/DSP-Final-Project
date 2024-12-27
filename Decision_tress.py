@@ -24,22 +24,24 @@ class DesicionTrees():
 
         # Encode categorical variables if necessary (simplified encoding example)
         categorical_cols = df.select_dtypes(include=['object', 'category']).columns
-        for col in categorical_cols:
-            print(f"{col}: {df[col].nunique()} unique values")
+        # for col in categorical_cols:
+        #     print(f"{col}: {df[col].nunique()} unique values")
 
-        # Handle high-cardinality columns
-        high_card_cols = [col for col in categorical_cols if df[col].nunique() > 100]
-        low_card_cols = [col for col in categorical_cols if col not in high_card_cols]
+        # # Handle high-cardinality columns
+        # high_card_cols = [col for col in categorical_cols if df[col].nunique() > 100]
+        # low_card_cols = [col for col in categorical_cols if col not in high_card_cols]
 
-        # Encode high-cardinality columns with frequency encoding
-        for col in high_card_cols:
-            freq_encoding = df[col].value_counts().to_dict()
-            df[col] = df[col].map(freq_encoding)
+        # # Encode high-cardinality columns with frequency encoding
+        # for col in high_card_cols:
+        #     freq_encoding = df[col].value_counts().to_dict()
+        #     df[col] = df[col].map(freq_encoding)
+
 
         # One-hot encode low-cardinality columns
-        df = pd.get_dummies(df, columns=low_card_cols, drop_first=True)
+        # df = pd.get_dummies(df, columns=low_card_cols, drop_first=True)
 
-            # Split dataset
+        df = df.drop(columns=categorical_cols)
+        # Split dataset
         X = df.drop(columns=['Accident_Severity_Serious', 'Accident_Severity_Slight'])
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
